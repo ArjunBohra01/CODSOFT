@@ -1,0 +1,91 @@
+# PASSWORD GENERATOR
+
+import string
+import random
+from tkinter import *
+from tkinter import messagebox
+import sqlite3
+
+with sqlite3.connect("users.db") as db:
+    cursor = db.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (Username TEXT NOT NULL, GeneratedPassword TEXT NOT NULL);")
+    db.commit()
+
+class GUI():
+    def __init__(self, master):
+        self.master = master
+        self.n_username = StringVar()
+        self.n_passwordlen = IntVar()
+        self.n_generatedpassword = StringVar()
+
+        master.title('Password Generator')
+        master.geometry('660x500')
+        master.config(bg="#00FF00")
+        master.resizable(False, False)
+
+        self.label = Label(text=":PASSWORD GENERATOR:", anchor=N, fg='darkblue', bg="#00FF00",
+                           font='times 20 bold underline')
+        self.label.grid(row=0, column=1, pady=10)
+
+        Label(text="", bg="#00FF00").grid(row=1, column=0)
+        Label(text="", bg="#00FF00").grid(row=2, column=0)
+        Label(text="", bg="#00FF00").grid(row=3, column=0)
+
+        self.user_label = Label(text="Enter User Name:", font='times 15 bold', bg='#00FF00', fg='skyblue')
+        self.user_label.grid(row=4, column=0, padx=10, sticky=W)
+
+        self.textfield = Entry(textvariable=self.n_username, font='times 15', bd=6, relief='ridge')
+        self.textfield.grid(row=4, column=1)
+        self.textfield.focus_set()
+
+        Label(text="", bg="#00FF00").grid(row=5, column=0)
+
+        self.length_label = Label(text="Enter Password Length:", font='times 15 bold', bg='#00FF00', fg='skyblue')
+        self.length_label.grid(row=6, column=0, padx=10, sticky=W)
+
+        self.length_field = Entry(textvariable=self.n_passwordlen, font='times 15', bd=6, relief='ridge')
+        self.length_field.grid(row=6, column=1)
+
+        Label(text="", bg="#00FF00").grid(row=7, column=0)
+
+        self.generated_label = Label(text="Generated Password:", font='times 15 bold', bg='#00FF00', fg='skyblue')
+        self.generated_label.grid(row=8, column=0, padx=10, sticky=W)
+
+        self.generated_field = Entry(textvariable=self.n_generatedpassword, font='times 15', bd=6, relief='ridge')
+        self.generated_field.grid(row=8, column=1)
+
+        Label(text="", bg="#00FF00").grid(row=9, column=0)
+
+        self.generate_btn = Button(text="GENERATE PASSWORD", bd=3, relief='solid', padx=10, pady=5,
+                                   font='Verdana 15 bold', fg='skyblue', command=self.generate_password)
+        self.generate_btn.grid(row=11, column=1, pady=10)
+
+    def generate_password(self):
+        username = self.n_username.get()
+        try:
+            length = int(self.n_passwordlen.get())
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Please enter a valid password length.")
+            return
+
+        if not username:
+            messagebox.showerror("Missing Info", "Please enter a username.")
+            return
+        if length <= 0:
+            messagebox.showerror("Invalid Length", "Password length must be greater than zero.")
+            return
+
+        characters = string.ascii_letters + string.digits + string.punctuation
+        password = ''.join(random.choice(characters) for _ in range(length))
+        self.n_generatedpassword.set(password)
+
+        with sqlite3.connect("users.db") as db:
+            cursor = db.cursor()
+            cursor.execute("INSERT INTO users (Username, GeneratedPassword) VALUES (?, ?)", (username, password))
+            db.commit()
+        messagebox.showinfo("Success", "Password Generated and Saved Successfully!")
+
+if __name__ == "__main__":
+    root = Tk()
+    app = GUI(root)
+    root.mainloop()
